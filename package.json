@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "serverless": "^3.23.0",
+    "serverless-domain-manager": "^6.1.0",
+    "serverless-iam-roles-per-function": "^3.2.0",
+    "serverless-offline": "^9.2.5",
+    "serverless-prune-plugin": "^2.0.1",
+    "serverless-plugin-log-retention": "^2.0.0"
+  }
+}

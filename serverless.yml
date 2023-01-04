@@ -1,0 +1,131 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: fasten-toolbox
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+frameworkVersion: '3'
+
+plugins:
+  - serverless-domain-manager
+  - serverless-offline
+  - serverless-iam-roles-per-function
+  - serverless-prune-plugin
+  - serverless-plugin-log-retention
+provider:
+  name: aws
+  runtime: go1.x
+  stage: toolbox
+  region: us-east-1
+  logs:
+    httpApi: true
+  httpApi:
+    disableDefaultEndpoint: true
+    cors:
+      allowedOrigins:
+        - "https://toolbox.fastenhealth.com"
+      allowedHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Amz-User-Agent
+        - X-Amzn-Trace-Id
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+        - PATCH
+        - HEAD
+      allowCredentials: true
+      maxAge: 6000 # In seconds
+
+  environment:
+    FASTEN_ENV: "prod"
+#    FASTEN_LOG_LEVEL: "DEBUG"
+
+package:
+  patterns:
+    - '!./**'
+    - ./bin/**
+
+# todo, determine if this still works with httpApi (without lambda)
+# https://www.serverless.com/framework/docs/providers/aws/events/http-api
+functions:
+
+  #################################################################################################
+  # Public
+  #################################################################################################
+  health:
+    handler: bin/health
+    events:
+      - httpApi:
+          path: /health
+          method: get
+
+
+  sourceExport:
+    handler: bin/source_export
+    timeout: 300
+    # https://www.serverless.com/blog/aws-lambda-function-urls-with-serverless-framework
+    url:
+      cors:
+        allowedOrigins:
+          - "https://toolbox.fastenhealth.com"
+        allowedHeaders:
+          - Content-Type
+          - X-Amz-Date
+          - Authorization
+          - X-Api-Key
+          - X-Amz-Security-Token
+          - X-Amz-User-Agent
+          - X-Amzn-Trace-Id
+        allowedMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - HEAD
+        allowCredentials: true
+        maxAge: 6000 # In seconds
+#    events:
+#      - httpApi:
+#          path: /secure/export
+#          method: post
+
+custom:
+  logRetentionInDays: 30 # expire all logs after 30 days
+  domain:
+    toolbox: 'toolbox-api.fastenhealth.com'
+  prune:
+    automatic: true
+    number: 3
+
+  customDomain:
+    autoDomain: true
+    region: ${self:provider.region}
+    domainName: "api.${self:custom.domain.${opt:stage, self:provider.stage}}"
+    certificateName: "*.${self:custom.domain.${opt:stage, self:provider.stage}}"
+    basePath: 'v1'
+    stage: ${opt:stage, self:provider.stage}
+    createRoute53Record: true
+    endpointType: regional
+    apiType: 'http'
